@@ -52,46 +52,45 @@ class AdaptiveAllReduceManager:
 
         device = torch.cuda.current_device()
 
-        # Initialize torch symmetric memory communicator
-        try:
-            from sglang.srt.distributed.device_communicators.torch_symm_mem import (
-                TorchSymmMemCommunicator,
-            )
+        from sglang.srt.layers.flashinfer_comm_fusion import (
+            ensure_workspace_initialized,
+        )
 
-            self.torch_symm_mem_communicator = TorchSymmMemCommunicator(
-                group=get_tp_group().device_group,
-                device=device,
+        ensure_workspace_initialized(
+            max_token_num=2048,
+            hidden_dim=4096,
+            use_fp32_lamport=False,
+        )
+        logger.info("FlashInfer workspace initialized for adaptive allreduce")
+
+        from sglang.srt.distributed.device_communicators.torch_symm_mem import (
+            TorchSymmMemCommunicator,
+        )
+
+        self.torch_symm_mem_communicator = TorchSymmMemCommunicator(
+            group=get_tp_group().device_group,
+            device=device,
+        )
+        if not self.torch_symm_mem_communicator.disabled:
+            logger.info(
+                "Torch symmetric memory communicator initialized for adaptive allreduce"
             )
-            if not self.torch_symm_mem_communicator.disabled:
-                logger.info(
-                    "Torch symmetric memory communicator initialized for adaptive allreduce"
-                )
-            else:
-                logger.info("Torch symmetric memory communicator is disabled")
-                self.torch_symm_mem_communicator = None
-        except Exception as e:
-            logger.warning(
-                f"Failed to initialize torch symmetric memory communicator: {e}"
-            )
+        else:
+            logger.info("Torch symmetric memory communicator is disabled")
             self.torch_symm_mem_communicator = None
 
-        # Initialize custom allreduce
-        try:
-            from sglang.srt.distributed.device_communicators.custom_all_reduce import (
-                CustomAllreduce,
-            )
+        from sglang.srt.distributed.device_communicators.custom_all_reduce import (
+            CustomAllreduce,
+        )
 
-            self.custom_allreduce = CustomAllreduce(
-                group=get_tp_group().device_group,
-                device=device,
-            )
-            if not self.custom_allreduce.disabled:
-                logger.info("Custom allreduce initialized for adaptive allreduce")
-            else:
-                logger.info("Custom allreduce is disabled")
-                self.custom_allreduce = None
-        except Exception as e:
-            logger.warning(f"Failed to initialize custom allreduce: {e}")
+        self.custom_allreduce = CustomAllreduce(
+            group=get_tp_group().device_group,
+            device=device,
+        )
+        if not self.custom_allreduce.disabled:
+            logger.info("Custom allreduce initialized for adaptive allreduce")
+        else:
+            logger.info("Custom allreduce is disabled")
             self.custom_allreduce = None
 
         self.communicators_initialized = True
