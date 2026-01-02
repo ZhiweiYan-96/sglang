@@ -151,7 +151,8 @@ def run_pytest(files, filter_expr=None):
         cmd = list(base_cmd)
         if i > 0:
             cmd.append("--last-failed")
-        cmd.extend(files)
+        else:
+            cmd.extend(files)
 
         if i > 0:
             print(
