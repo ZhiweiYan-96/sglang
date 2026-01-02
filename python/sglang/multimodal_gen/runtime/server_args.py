@@ -271,7 +271,7 @@ class ServerArgs:
             if self.dit_cpu_offload is None:
                 self.dit_cpu_offload = True
             if self.text_encoder_cpu_offload is None:
-                self.text_encoder_cpu_offload = False
+                self.text_encoder_cpu_offload = True
             if self.image_encoder_cpu_offload is None:
                 self.image_encoder_cpu_offload = False
             if self.vae_cpu_offload is None:
